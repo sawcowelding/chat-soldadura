@@ -8,6 +8,14 @@ class WeldingChatBot:
     def ask_questions(self):
         st.title("Asistente de Selección de Soldadoras")
         
+        mode = st.radio("Seleccione el modo de búsqueda:", ["Filtro Paso a Paso", "Búsqueda Directa"])
+        
+        if mode == "Búsqueda Directa":
+            self.direct_search()
+        else:
+            self.step_by_step_filter()
+
+    def direct_search(self):
         self.customer_requirements['process'] = st.selectbox("¿Qué tipo de soldadura necesita?", ["MIG", "TIG", "SMAW", "Plasma", "Multiproceso"])
         self.customer_requirements['material'] = st.selectbox("¿Qué tipo de material va a soldar?", ["Acero inoxidable", "Aluminio", "Acero al carbono"])
         self.customer_requirements['amperage'] = st.number_input("¿Cuál es el amperaje máximo que necesita?", min_value=1, step=1)
@@ -20,46 +28,57 @@ class WeldingChatBot:
         if st.button("Buscar modelos recomendados"):
             self.recommend_models()
 
+    def step_by_step_filter(self):
+        st.subheader("Filtro Paso a Paso")
+        filtered_catalog = self.catalog.copy()
+        
+        process_filter = st.selectbox("Filtrar por tipo de soldadura", ["Todos"] + list(set(model['process'] for model in self.catalog)))
+        if process_filter != "Todos":
+            filtered_catalog = [model for model in filtered_catalog if model['process'] == process_filter]
+        
+        material_filter = st.selectbox("Filtrar por material", ["Todos"] + list(set(model['material'] for model in filtered_catalog)))
+        if material_filter != "Todos":
+            filtered_catalog = [model for model in filtered_catalog if model['material'] == material_filter]
+        
+        max_amperage = st.slider("Filtrar por amperaje máximo", 1, max(model['amperage'] for model in filtered_catalog), step=10)
+        filtered_catalog = [model for model in filtered_catalog if model['amperage'] <= max_amperage]
+        
+        max_cycle = st.slider("Filtrar por ciclo de trabajo (%)", 1, 100, step=5)
+        filtered_catalog = [model for model in filtered_catalog if model['cycle'] <= max_cycle]
+        
+        voltage_filter = st.selectbox("Filtrar por voltaje", ["Todos"] + list(set(vol for model in filtered_catalog for vol in model['voltage'])))
+        if voltage_filter != "Todos":
+            filtered_catalog = [model for model in filtered_catalog if voltage_filter in model['voltage']]
+        
+        pulsed_wave_filter = st.radio("Filtrar por onda pulsada", ["Todos", "Sí", "No"])
+        if pulsed_wave_filter != "Todos":
+            filtered_catalog = [model for model in filtered_catalog if model['pulsed_wave'] == (pulsed_wave_filter == "Sí")]
+        
+        motosoldadora_filter = st.radio("Filtrar por motosoldadora", ["Todos", "Sí", "No"])
+        if motosoldadora_filter != "Todos":
+            filtered_catalog = [model for model in filtered_catalog if model['motosoldadora'] == (motosoldadora_filter == "Sí")]
+        
+        st.write(f"Opciones disponibles: {len(filtered_catalog)}")
+        for model in filtered_catalog:
+            st.write(f"- **{model['name']}** | Amperaje: {model['amperage']}A | Ciclo de Trabajo: {model['cycle']}%")
+
     def recommend_models(self):
-        recommendations = []
-        similar_matches = []
+        recommendations = [model for model in self.catalog if 
+            self.customer_requirements['process'].lower() in model['process'].lower() and
+            self.customer_requirements['material'].lower() in model['material'].lower() and
+            self.customer_requirements['amperage'] <= model['amperage'] and
+            self.customer_requirements['cycle'] <= model['cycle'] and
+            self.customer_requirements['voltage'] in model['voltage'] and
+            (self.customer_requirements['pulsed_wave'] == "No" or model.get('pulsed_wave', False)) and
+            (self.customer_requirements['motosoldadora'] == "No" or model.get('motosoldadora', False))]
 
-        for model in self.catalog:
-            match_criteria = (
-                self.customer_requirements['process'].lower() in model['process'].lower() and
-                self.customer_requirements['material'].lower() in model['material'].lower() and
-                self.customer_requirements['amperage'] <= model['amperage'] and
-                self.customer_requirements['cycle'] <= model['cycle'] and
-                self.customer_requirements['voltage'] in model['voltage'] and
-                (self.customer_requirements['pulsed_wave'] == "No" or model.get('pulsed_wave', False)) and
-                (self.customer_requirements['motosoldadora'] == "No" or model.get('motosoldadora', False))
-            )
-            
-            if match_criteria:
-                recommendations.append(model)
-            else:
-                similarity_score = sum([
-                    self.customer_requirements['process'].lower() in model['process'].lower(),
-                    self.customer_requirements['material'].lower() in model['material'].lower(),
-                    self.customer_requirements['amperage'] <= model['amperage'],
-                    self.customer_requirements['cycle'] <= model['cycle'],
-                    self.customer_requirements['voltage'] in model['voltage'],
-                    (self.customer_requirements['pulsed_wave'] == "No" or model.get('pulsed_wave', False)),
-                    (self.customer_requirements['motosoldadora'] == "No" or model.get('motosoldadora', False))
-                ])
-                if similarity_score >= 3:  # Mostrar modelos con al menos 3 coincidencias
-                    similar_matches.append(model)
-
+        st.subheader("Modelos recomendados:")
         if recommendations:
-            st.subheader("Modelos recomendados:")
             for rec in recommendations:
                 st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}%")
         else:
-            st.warning("No se encontraron modelos exactos. Aquí tienes algunas opciones similares:")
-            for rec in similar_matches:
-                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}%")
+            st.warning("No se encontraron modelos exactos.")
 
-# Ejemplo de catálogo con información de los modelos (extraído de los PDFs)
 catalog = [
     {'name': 'Esab Bantam 2.5', 'process': 'SMAW', 'material': 'Acero al carbono', 'amperage': 120, 'cycle': 40, 'voltage': ['220V'], 'pulsed_wave': False, 'motosoldadora': False},
     {'name': 'Lincoln MegaForce 175', 'process': 'SMAW', 'material': 'Acero inoxidable', 'amperage': 175, 'cycle': 60, 'voltage': ['120V', '230V'], 'pulsed_wave': False, 'motosoldadora': False},
