@@ -79,11 +79,12 @@ class WeldingChatBot:
         else:
             st.warning("No se encontraron modelos exactos.")
 
+# Carga de datos desde los catálogos oficiales
 catalog = [
-    {'name': 'Esab Bantam 2.5', 'process': 'SMAW', 'material': 'Acero al carbono', 'amperage': 120, 'cycle': 40, 'voltage': ['220V'], 'pulsed_wave': False, 'motosoldadora': False},
-    {'name': 'Lincoln MegaForce 175', 'process': 'SMAW', 'material': 'Acero inoxidable', 'amperage': 175, 'cycle': 60, 'voltage': ['120V', '230V'], 'pulsed_wave': False, 'motosoldadora': False},
-    {'name': 'Miller Millermatic 142', 'process': 'MIG', 'material': 'Aluminio', 'amperage': 140, 'cycle': 60, 'voltage': ['120V'], 'pulsed_wave': True, 'motosoldadora': False},
-    {'name': 'Sumig Welbee P402', 'process': 'Multiproceso', 'material': 'Acero al carbono', 'amperage': 400, 'cycle': 100, 'voltage': ['220V', '440V'], 'pulsed_wave': True, 'motosoldadora': False}
+    {'name': 'Esab Renegade 300', 'process': 'SMAW', 'material': 'Todos', 'amperage': 300, 'cycle': 60, 'voltage': ['220V', '380V'], 'pulsed_wave': False, 'motosoldadora': False},
+    {'name': 'Lincoln Idealarc DC600', 'process': 'Multiproceso', 'material': 'Acero al carbono', 'amperage': 600, 'cycle': 100, 'voltage': ['230V', '460V'], 'pulsed_wave': False, 'motosoldadora': False},
+    {'name': 'Miller Millermatic 252', 'process': 'MIG', 'material': 'Aluminio', 'amperage': 250, 'cycle': 60, 'voltage': ['230V'], 'pulsed_wave': True, 'motosoldadora': False},
+    {'name': 'Sumig Falcon 505', 'process': 'SMAW', 'material': 'Acero inoxidable', 'amperage': 500, 'cycle': 100, 'voltage': ['220V', '440V'], 'pulsed_wave': True, 'motosoldadora': False}
 ]
 
 st.sidebar.title("Asistente de Selección de Soldadoras")
