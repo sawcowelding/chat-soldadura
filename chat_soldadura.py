@@ -21,23 +21,40 @@ class WeldingChatBot:
 
     def recommend_models(self):
         recommendations = []
+        similar_matches = []
+
         for model in self.catalog:
-            if (
+            match_criteria = (
                 self.customer_requirements['process'].lower() in model['process'].lower() and
                 self.customer_requirements['material'].lower() in model['material'].lower() and
                 self.customer_requirements['amperage'] <= model['amperage'] and
                 self.customer_requirements['cycle'] <= model['cycle'] and
                 self.customer_requirements['voltage'] in model['voltage'] and
                 self.customer_requirements['budget'] >= model['price']
-            ):
+            )
+            
+            if match_criteria:
                 recommendations.append(model)
+            else:
+                similarity_score = sum([
+                    self.customer_requirements['process'].lower() in model['process'].lower(),
+                    self.customer_requirements['material'].lower() in model['material'].lower(),
+                    self.customer_requirements['amperage'] <= model['amperage'],
+                    self.customer_requirements['cycle'] <= model['cycle'],
+                    self.customer_requirements['voltage'] in model['voltage'],
+                    self.customer_requirements['budget'] >= model['price']
+                ])
+                if similarity_score >= 3:  # Mostrar modelos con al menos 3 coincidencias
+                    similar_matches.append(model)
 
         if recommendations:
             st.subheader("Modelos recomendados:")
             for rec in recommendations:
                 st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}% | Precio: ${rec['price']}")
         else:
-            st.warning("No se encontraron modelos que coincidan con todos los criterios.")
+            st.warning("No se encontraron modelos exactos. Aquí tienes algunas opciones similares:")
+            for rec in similar_matches:
+                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}% | Precio: ${rec['price']}")
 
 # Ejemplo de catálogo con información de los modelos (extraído de los PDFs)
 catalog = [
