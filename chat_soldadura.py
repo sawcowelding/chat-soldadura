@@ -14,7 +14,8 @@ class WeldingChatBot:
         self.customer_requirements['cycle'] = st.number_input("¿Qué ciclo de trabajo necesita (%)?", min_value=1, max_value=100, step=1)
         self.customer_requirements['portability'] = st.radio("¿Requiere una máquina portátil?", ["Sí", "No"])
         self.customer_requirements['voltage'] = st.selectbox("¿Qué tipo de conexión eléctrica tiene disponible?", ["Monofásica", "Trifásica", "220V", "380V"])
-        self.customer_requirements['budget'] = st.number_input("¿Cuál es el presupuesto máximo?", min_value=1, step=1)
+        self.customer_requirements['pulsed_wave'] = st.radio("¿Requiere onda pulsada?", ["Sí", "No"])
+        self.customer_requirements['motosoldadora'] = st.radio("¿Está interesado en motosoldadoras?", ["Sí", "No"])
         
         if st.button("Buscar modelos recomendados"):
             self.recommend_models()
@@ -30,7 +31,8 @@ class WeldingChatBot:
                 self.customer_requirements['amperage'] <= model['amperage'] and
                 self.customer_requirements['cycle'] <= model['cycle'] and
                 self.customer_requirements['voltage'] in model['voltage'] and
-                self.customer_requirements['budget'] >= model['price']
+                (self.customer_requirements['pulsed_wave'] == "No" or model.get('pulsed_wave', False)) and
+                (self.customer_requirements['motosoldadora'] == "No" or model.get('motosoldadora', False))
             )
             
             if match_criteria:
@@ -42,7 +44,8 @@ class WeldingChatBot:
                     self.customer_requirements['amperage'] <= model['amperage'],
                     self.customer_requirements['cycle'] <= model['cycle'],
                     self.customer_requirements['voltage'] in model['voltage'],
-                    self.customer_requirements['budget'] >= model['price']
+                    (self.customer_requirements['pulsed_wave'] == "No" or model.get('pulsed_wave', False)),
+                    (self.customer_requirements['motosoldadora'] == "No" or model.get('motosoldadora', False))
                 ])
                 if similarity_score >= 3:  # Mostrar modelos con al menos 3 coincidencias
                     similar_matches.append(model)
@@ -50,18 +53,18 @@ class WeldingChatBot:
         if recommendations:
             st.subheader("Modelos recomendados:")
             for rec in recommendations:
-                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}% | Precio: ${rec['price']}")
+                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}%")
         else:
             st.warning("No se encontraron modelos exactos. Aquí tienes algunas opciones similares:")
             for rec in similar_matches:
-                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}% | Precio: ${rec['price']}")
+                st.write(f"- **{rec['name']}** | Amperaje: {rec['amperage']}A | Ciclo de Trabajo: {rec['cycle']}%")
 
 # Ejemplo de catálogo con información de los modelos (extraído de los PDFs)
 catalog = [
-    {'name': 'Esab Bantam 2.5', 'process': 'SMAW', 'material': 'Acero al carbono', 'amperage': 120, 'cycle': 40, 'voltage': ['220V'], 'price': 200},
-    {'name': 'Lincoln MegaForce 175', 'process': 'SMAW', 'material': 'Acero inoxidable', 'amperage': 175, 'cycle': 60, 'voltage': ['120V', '230V'], 'price': 500},
-    {'name': 'Miller Millermatic 142', 'process': 'MIG', 'material': 'Aluminio', 'amperage': 140, 'cycle': 60, 'voltage': ['120V'], 'price': 800},
-    {'name': 'Sumig Welbee P402', 'process': 'Multiproceso', 'material': 'Acero al carbono', 'amperage': 400, 'cycle': 100, 'voltage': ['220V', '440V'], 'price': 3000}
+    {'name': 'Esab Bantam 2.5', 'process': 'SMAW', 'material': 'Acero al carbono', 'amperage': 120, 'cycle': 40, 'voltage': ['220V'], 'pulsed_wave': False, 'motosoldadora': False},
+    {'name': 'Lincoln MegaForce 175', 'process': 'SMAW', 'material': 'Acero inoxidable', 'amperage': 175, 'cycle': 60, 'voltage': ['120V', '230V'], 'pulsed_wave': False, 'motosoldadora': False},
+    {'name': 'Miller Millermatic 142', 'process': 'MIG', 'material': 'Aluminio', 'amperage': 140, 'cycle': 60, 'voltage': ['120V'], 'pulsed_wave': True, 'motosoldadora': False},
+    {'name': 'Sumig Welbee P402', 'process': 'Multiproceso', 'material': 'Acero al carbono', 'amperage': 400, 'cycle': 100, 'voltage': ['220V', '440V'], 'pulsed_wave': True, 'motosoldadora': False}
 ]
 
 st.sidebar.title("Asistente de Selección de Soldadoras")
